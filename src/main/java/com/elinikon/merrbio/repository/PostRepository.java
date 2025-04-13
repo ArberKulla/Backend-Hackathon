@@ -18,7 +18,9 @@ import java.util.List;
 public interface PostRepository extends JpaRepository<Post, Integer> {
     Page<Post> findByTitleContainingIgnoreCase(String title, Pageable pageable);
 
-    List<Post> findByUserId(int userId);
+    Page<Post> findByUserId(int userId, Pageable pageable);
+
+    Page<Post> findByUserIdAndTitleContaining(int userId, String title, Pageable pageable);
 
     // Find by title and price range
     Page<Post> findByTitleContainingIgnoreCaseAndPriceBetween(String title, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);

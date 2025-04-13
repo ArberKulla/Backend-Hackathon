@@ -2,18 +2,19 @@ package com.elinikon.merrbio.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.sql.Blob;
 import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
-public class PostResponse {
+@NoArgsConstructor
+public class PostRequestResponse {
     private int id;
-    private String title;
     private String description;
-    private BigDecimal price;
     private String userName;
+    private String phoneNumber;
     private LocalDateTime createdDate;
+    private boolean approved;
 }

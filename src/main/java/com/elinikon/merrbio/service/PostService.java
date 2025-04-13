@@ -5,6 +5,7 @@ import com.elinikon.merrbio.dto.PostResponse;
 import com.elinikon.merrbio.entity.Post;
 import com.elinikon.merrbio.entity.PostRequest;
 import com.elinikon.merrbio.entity.User;
+import com.elinikon.merrbio.entity.UserRole;
 import com.elinikon.merrbio.repository.PostRepository;
 import com.elinikon.merrbio.repository.UserRepository;
 import org.modelmapper.ModelMapper;
@@ -13,13 +14,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.sql.Blob;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,7 +49,6 @@ public class PostService {
                         post.getTitle(),
                         post.getDescription(),
                         post.getPrice(),
-                        post.getImage(),
                         post.getUser().getFirstName() + " " + post.getUser().getLastName(),
                         post.getCreatedDate()
                 ))
@@ -98,7 +103,6 @@ public class PostService {
                 post.getTitle(),
                 post.getDescription(),
                 post.getPrice(),
-                post.getImage(),
                 post.getUser().getFirstName() + " " + post.getUser().getLastName(),
                 post.getCreatedDate()
         ));
@@ -106,38 +110,89 @@ public class PostService {
 
 
 
-    public List<Post> getFromUser(Principal connectedUser) {
+    public Page<PostResponse> getFromUser(Principal connectedUser, String title, Integer page) {
         var user = (User) ((UsernamePasswordAuthenticationToken) connectedUser).getPrincipal();
 
-        return postRepository.findByUserId(user.getId());
+        // Default page value if not provided
+        if (page == null) {
+            page = 1;  // Default to page 1 if not provided
+        }
+
+        // Pageable with page size defined elsewhere
+        Pageable pageable = PageRequest.of(page, pageSize);  // Adjust to 0-indexed page
+
+        Page<Post> postPage;
+
+        if (title != null && !title.isEmpty()) {
+            // Filter posts by user and title if title is provided
+            postPage = postRepository.findByUserIdAndTitleContaining(user.getId(), title, pageable);
+        } else {
+            // If no title filter, just fetch posts by user
+            postPage = postRepository.findByUserId(user.getId(), pageable);
+        }
+
+        // Mapping Post to PostResponse
+        return postPage.map(post -> new PostResponse(
+                post.getId(),
+                post.getTitle(),
+                post.getDescription(),
+                post.getPrice(),
+                post.getUser().getFirstName() + " " + post.getUser().getLastName(),
+                post.getCreatedDate()
+        ));
     }
 
+
     @Transactional
-    public Post create(PostDTO postDTO, Principal connectedUser){
+    public Post create(PostDTO postDTO, Principal connectedUser) {
         var user = (User) ((UsernamePasswordAuthenticationToken) connectedUser).getPrincipal();
 
         ModelMapper modelMapper = new ModelMapper();
         Post post = modelMapper.map(postDTO, Post.class);
         post.setUser(user);
 
-        return post;
+        // Save the post to the database
+        return postRepository.save(post);  // This will persist the post to the database
     }
 
     @Transactional
-    public Post update(int id, PostDTO postDTO, Principal connectedUser) {
+    public PostResponse getById(int id, Principal connectedUser) throws IOException, SQLException {
         var user = (User) ((UsernamePasswordAuthenticationToken) connectedUser).getPrincipal();
 
         Post current = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found with ID: " + id));
 
-        if(current.getUser()!=user){
+        if(current.getUser().getId()!=user.getId()  || user.getUserRole()== UserRole.ADMIN){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot fetch this post");
+        }
+
+
+        PostResponse post = new PostResponse(
+                current.getId(),
+                current.getTitle(),
+                current.getDescription(),
+                current.getPrice(),
+                current.getUser().getEmail(),
+                current.getCreatedDate()
+        );
+
+        return post;
+    }
+
+    @Transactional
+    public Post update(int id, PostDTO postDTO, Principal connectedUser) throws IOException, SQLException {
+        var user = (User) ((UsernamePasswordAuthenticationToken) connectedUser).getPrincipal();
+
+        Post current = postRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Post not found with ID: " + id));
+
+        if(current.getUser().getId()!=user.getId()  || user.getUserRole()== UserRole.ADMIN){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot edit this post");
         }
 
         current.setDescription(postDTO.getDescription());
         current.setTitle(postDTO.getTitle());
         current.setPrice(postDTO.getPrice());
-        current.setImage(postDTO.getImage());
 
         return postRepository.save(current);
     }
@@ -149,7 +204,7 @@ public class PostService {
         Post current = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found with ID: " + id));
 
-        if(current.getUser()!=user){
+        if(current.getUser().getId()!=user.getId()  || user.getUserRole()== UserRole.ADMIN){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot delete this post");
         }
 

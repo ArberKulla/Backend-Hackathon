@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.sql.Blob;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,10 +32,6 @@ public class Post {
 
     @Column(name = "price")
     private BigDecimal price;
-
-    @Lob
-    @Column(name = "image")
-    private byte[] image;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)

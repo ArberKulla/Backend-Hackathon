@@ -45,9 +45,6 @@ public class User implements UserDetails {
     @Column(name = "userRole")
     private UserRole userRole;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PostRequest> postRequests = new ArrayList<>();
-
     @PrePersist
     protected void onCreate() {
         this.createdDate = LocalDateTime.now(); // Default to current timestamp

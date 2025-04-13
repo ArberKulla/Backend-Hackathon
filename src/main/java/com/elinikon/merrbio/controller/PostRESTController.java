@@ -12,8 +12,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.sql.SQLException;
 import java.util.List;
 
 @RestController
@@ -37,9 +39,21 @@ public class PostRESTController {
         return new ResponseEntity<>(postService.getPostsByTitleAndPrice(title, page, minPrice, maxPrice), HttpStatus.OK);
     }
 
+    @GetMapping("/get/{post_id}")
+    public ResponseEntity<PostResponse> getById(@PathVariable int post_id,Principal connectedUser) throws SQLException, IOException {
+        PostResponse createdPost = postService.getById(post_id,connectedUser);
+        return new ResponseEntity<>(createdPost, HttpStatus.OK);
+    }
     @GetMapping("/get/user")
-    public ResponseEntity<List<Post>> getUserPosts(Principal connectedUser) {
-       return new ResponseEntity<>(postService.getFromUser(connectedUser), HttpStatus.OK);
+    public ResponseEntity<Page<PostResponse>> getUserPosts(
+            Principal connectedUser,
+            @RequestParam(required = false) String title,  // Added title filter
+            @RequestParam(required = false) Integer page) {
+
+        // Call the service layer with title and page
+        Page<PostResponse> postResponsePage = postService.getFromUser(connectedUser, title, page);
+
+        return new ResponseEntity<>(postResponsePage, HttpStatus.OK);
     }
 
     @PostMapping("/post")
@@ -49,7 +63,7 @@ public class PostRESTController {
     }
 
     @PutMapping("/put/{post_id}")
-    public ResponseEntity<Post> edit(@RequestBody PostDTO post,@PathVariable int post_id,Principal connectedUser) {
+    public ResponseEntity<Post> edit(@RequestBody PostDTO post,@PathVariable int post_id,Principal connectedUser) throws SQLException, IOException {
         Post createdPost = postService.update(post_id,post,connectedUser);
         return new ResponseEntity<>(createdPost, HttpStatus.OK);
     }

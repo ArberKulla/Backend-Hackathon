@@ -31,6 +31,12 @@ spring:
     cache:
       period: 0
 
+  servlet:
+    multipart:
+      enabled: true  # Enable multipart uploads
+      max-file-size: 50MB  # Optional: Set file size limit
+      max-request-size: 50MB  # Optional: Set request size limit
+
 application:
   security:
     jwt:
