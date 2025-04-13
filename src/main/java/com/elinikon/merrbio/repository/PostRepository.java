@@ -16,6 +16,8 @@ import java.util.List;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Integer> {
+    Page<Post> findAll(Pageable pageable);
+
     Page<Post> findByTitleContainingIgnoreCase(String title, Pageable pageable);
 
     Page<Post> findByUserId(int userId, Pageable pageable);

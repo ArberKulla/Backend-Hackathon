@@ -37,6 +37,28 @@ public class PostService {
     @Autowired
     PostRepository postRepository;
 
+    public Page<PostResponse> getAllPosts(Integer page, Principal connectedUser){
+        if (page==null){
+            page = 1;
+        }
+        User user = (User) ((UsernamePasswordAuthenticationToken) connectedUser).getPrincipal();
+
+        if(user.getUserRole()!=UserRole.ADMIN){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot fetch this post");
+        }
+
+        Pageable pageable = PageRequest.of(page, pageSize);
+        Page<Post> postPage =  postRepository.findAll(pageable);
+        return postPage.map(post -> new PostResponse(
+                post.getId(),
+                post.getTitle(),
+                post.getDescription(),
+                post.getPrice(),
+                post.getUser().getFirstName() + " " + post.getUser().getLastName(),
+                post.getCreatedDate()
+        ));
+    }
+
     public List<PostResponse> getPostsByPage(Integer page) {
         if (page==null){
             page = 1;
@@ -162,7 +184,7 @@ public class PostService {
         Post current = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found with ID: " + id));
 
-        if(current.getUser().getId()!=user.getId()  || user.getUserRole()== UserRole.ADMIN){
+        if(current.getUser().getId()!=user.getId()  && user.getUserRole()!= UserRole.ADMIN){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot fetch this post");
         }
 
@@ -186,7 +208,7 @@ public class PostService {
         Post current = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found with ID: " + id));
 
-        if(current.getUser().getId()!=user.getId()  || user.getUserRole()== UserRole.ADMIN){
+        if(current.getUser().getId()!=user.getId()  && user.getUserRole()!= UserRole.ADMIN){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot edit this post");
         }
 
@@ -204,7 +226,8 @@ public class PostService {
         Post current = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found with ID: " + id));
 
-        if(current.getUser().getId()!=user.getId()  || user.getUserRole()== UserRole.ADMIN){
+        
+        if(current.getUser().getId()!=user.getId()  && user.getUserRole()!= UserRole.ADMIN){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot delete this post");
         }
 

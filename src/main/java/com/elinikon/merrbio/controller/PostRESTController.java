@@ -27,6 +27,14 @@ public class PostRESTController {
 
     @Autowired
     PostRequestRepository postRequestRepository;
+    @GetMapping("/get/all")
+    public ResponseEntity<Page<PostResponse>> getAll(
+            Principal connectedUser,
+            @RequestParam(required = false) Integer page) {
+        Page<PostResponse> postResponsePage = postService.getAllPosts(page,connectedUser);
+
+        return new ResponseEntity<>(postResponsePage, HttpStatus.OK);
+    }
 
     @GetMapping("/get")
     public ResponseEntity<Page<PostResponse>> getPosts(

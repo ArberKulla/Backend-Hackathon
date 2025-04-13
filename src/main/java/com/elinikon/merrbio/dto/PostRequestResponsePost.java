@@ -16,7 +16,6 @@ public class PostRequestResponsePost {
     private String postDescription;
     private BigDecimal postPrice;
     private String description;
-    private String phoneNumber;
     private LocalDateTime createdDate;
     private boolean approved;
 }
