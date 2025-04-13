@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +30,7 @@ public class Post {
     private String description;
 
     @Column(name = "price")
-    private String price;
+    private BigDecimal price;
 
     @Lob
     @Column(name = "image")

@@ -1,15 +1,18 @@
 package com.elinikon.merrbio.controller;
 
 import com.elinikon.merrbio.dto.PostDTO;
+import com.elinikon.merrbio.dto.PostResponse;
 import com.elinikon.merrbio.entity.Post;
 import com.elinikon.merrbio.entity.PostRequest;
 import com.elinikon.merrbio.repository.PostRequestRepository;
 import com.elinikon.merrbio.service.PostService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.List;
 
@@ -24,8 +27,14 @@ public class PostRESTController {
     PostRequestRepository postRequestRepository;
 
     @GetMapping("/get")
-    public ResponseEntity<List<Post>> getPosts(@RequestParam(required = false) String title) {
-        return new ResponseEntity<>(postService.getPostsByTitle(title), HttpStatus.OK);
+    public ResponseEntity<Page<PostResponse>> getPosts(
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice) {
+
+        // Call the service method with all the parameters
+        return new ResponseEntity<>(postService.getPostsByTitleAndPrice(title, page, minPrice, maxPrice), HttpStatus.OK);
     }
 
     @GetMapping("/get/user")
